@@ -17,10 +17,10 @@ def connect_db(db_path: Path = DB_PATH):
     return connection
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with connect_db() as db:
+def initialize_db(db_path: Path = DB_PATH):
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with connect_db(db_path) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +29,11 @@ async def lifespan(app: FastAPI):
                 body TEXT NOT NULL
             )
         """)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_db()
     yield
 
 
@@ -40,22 +45,34 @@ class MessageRequest(BaseModel):
     body: str = Field(min_length=1)
 
 
+def save_message(
+    db_path: Path,
+    sender: str,
+    recipient: str,
+    body: str,
+):
+    with connect_db(db_path) as db:
+        cursor = db.execute(
+            """INSERT INTO messages (sender, recipient, body)
+               VALUES (?, ?, ?)""",
+            (sender, recipient, body),
+        )
+        message_id = cursor.lastrowid
+
+    return {"id": message_id, "status": "accepted"}
+
+
 @app.post("/messages", status_code=201)
 def send_message(
     request: MessageRequest,
     x_user_id: str = Header(min_length=1),
 ):
-    with connect_db() as db:
-        cursor = db.execute(
-            """
-            INSERT INTO messages (sender, recipient, body)
-            VALUES (?, ?, ?)
-            """,
-            (x_user_id, request.recipient, request.body),
-        )
-        message_id = cursor.lastrowid
-
-    return {"id": message_id, "status": "accepted"}
+    return save_message(
+        DB_PATH,
+        x_user_id,
+        request.recipient,
+        request.body,
+    )
 
 
 @app.get("/messages")

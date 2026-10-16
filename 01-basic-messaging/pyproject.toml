@@ -9,3 +9,8 @@ dependencies = [
     "httpx2>=2.13.1",
     "uvicorn>=0.54.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
