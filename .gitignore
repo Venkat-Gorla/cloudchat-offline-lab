@@ -11,9 +11,6 @@ venv/
 .env/
 .venv/
 
-# CDK
-**/cdk.out/
-
 # Logs and runtime files
 *.log
 *.out
@@ -44,29 +41,15 @@ build/
 *.env
 secrets.json
 
-# Pipenv
-Pipfile.lock
-
 .aws-sam
 samconfig.toml
+
 response.json
-
-.terraform/
-*.tfstate
-*.tfstate.backup
-*.zip
-terraform.tfvars
-*.tfvars
-
-# --- Node.js ---
-node_modules/
-npm-debug.log*
-yarn.lock
-pnpm-lock.yaml
-
-# --- Build / coverage ---
-coverage/
-.nyc_output/
-
 del.txt
+
+# SQLite databases
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
 
