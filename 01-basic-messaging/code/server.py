@@ -2,19 +2,17 @@
 uv run uvicorn server:app --app-dir code --reload
 """
 
-import os
 from pathlib import Path
 import sqlite3
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header
 from pydantic import BaseModel, Field
 
+DB_PATH = Path("messages.db")
 
-DB_PATH = Path(os.getenv("CHAT_DB_PATH", "messages.db"))
 
-
-def connect_db():
-    connection = sqlite3.connect(DB_PATH)
+def connect_db(db_path: Path = DB_PATH):
+    connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     return connection
 
