@@ -62,6 +62,21 @@ def save_message(
     return {"id": message_id, "status": "accepted"}
 
 
+def list_messages(db_path: Path, recipient: str):
+    with connect_db(db_path) as db:
+        rows = db.execute(
+            """
+            SELECT id, sender, recipient, body
+            FROM messages
+            WHERE recipient = ?
+            ORDER BY id
+            """,
+            (recipient,),
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
 @app.post("/messages", status_code=201)
 def send_message(
     request: MessageRequest,
@@ -77,15 +92,4 @@ def send_message(
 
 @app.get("/messages")
 def get_messages(x_user_id: str = Header(min_length=1)):
-    with connect_db() as db:
-        rows = db.execute(
-            """
-            SELECT id, sender, recipient, body
-            FROM messages
-            WHERE recipient = ?
-            ORDER BY id
-            """,
-            (x_user_id,),
-        ).fetchall()
-
-    return {"messages": [dict(row) for row in rows]}
+    return {"messages": list_messages(DB_PATH, x_user_id)}
