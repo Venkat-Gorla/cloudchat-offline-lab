@@ -5,6 +5,7 @@ uv run pytest code -v
 from outgoing_queue import (
     initialize_db,
     enqueue_message,
+    get_message,
     get_pending_messages,
     mark_in_flight,
     mark_delivery_failed,
@@ -62,3 +63,20 @@ def test_mark_delivery_failed_preserves_message(tmp_path):
 
     # The retry is scheduled for the future.
     assert messages == []
+
+
+def test_get_message_by_id(tmp_path):
+    db_path = tmp_path / "test.db"
+    initialize_db(db_path)
+
+    result = enqueue_message(db_path, "alice", "bob", "Hello Bob")
+
+    message = get_message(db_path, result["id"])
+
+    assert message["id"] == result["id"]
+    assert message["sender"] == "alice"
+    assert message["recipient"] == "bob"
+    assert message["body"] == "Hello Bob"
+    assert message["status"] == "pending"
+    assert message["attempt_count"] == 0
+    assert message["next_attempt_at"] is None
