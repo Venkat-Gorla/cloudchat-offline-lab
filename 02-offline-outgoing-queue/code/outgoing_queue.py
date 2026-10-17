@@ -1,7 +1,6 @@
 from pathlib import Path
 import sqlite3
 
-
 DB_PATH = Path("outgoing.db")
 
 
@@ -18,6 +17,7 @@ def initialize_db(db_path: Path = DB_PATH):
         db.execute("""
             CREATE TABLE IF NOT EXISTS outgoing_messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender TEXT NOT NULL,
                 recipient TEXT NOT NULL,
                 body TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
@@ -26,14 +26,19 @@ def initialize_db(db_path: Path = DB_PATH):
         """)
 
 
-def enqueue_message(db_path: Path, recipient: str, body: str):
+def enqueue_message(
+    db_path: Path,
+    sender: str,
+    recipient: str,
+    body: str,
+):
     with connect_db(db_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO outgoing_messages (recipient, body)
-            VALUES (?, ?)
+            INSERT INTO outgoing_messages (sender, recipient, body)
+            VALUES (?, ?, ?)
             """,
-            (recipient, body),
+            (sender, recipient, body),
         )
         message_id = cursor.lastrowid
 
@@ -44,7 +49,7 @@ def get_pending_messages(db_path: Path):
     with connect_db(db_path) as db:
         rows = db.execute(
             """
-            SELECT id, recipient, body, status, attempt_count
+            SELECT id, sender, recipient, body, status, attempt_count
             FROM outgoing_messages
             WHERE status = 'pending'
             ORDER BY id
