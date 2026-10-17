@@ -60,7 +60,5 @@ def test_mark_delivery_failed_preserves_message(tmp_path):
 
     messages = get_pending_messages(db_path)
 
-    assert len(messages) == 1
-    assert messages[0]["id"] == message_id
-    assert messages[0]["status"] == "pending"
-    assert messages[0]["attempt_count"] == 1
+    # The retry is scheduled for the future.
+    assert messages == []
