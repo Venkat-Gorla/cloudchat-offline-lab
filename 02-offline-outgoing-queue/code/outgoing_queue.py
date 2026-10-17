@@ -57,3 +57,18 @@ def get_pending_messages(db_path: Path):
         ).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def mark_in_flight(db_path: Path, message_id: int):
+    with connect_db(db_path) as db:
+        cursor = db.execute(
+            """
+            UPDATE outgoing_messages
+            SET status = 'in_flight',
+                attempt_count = attempt_count + 1
+            WHERE id = ? AND status = 'pending'
+            """,
+            (message_id,),
+        )
+
+    return cursor.rowcount == 1

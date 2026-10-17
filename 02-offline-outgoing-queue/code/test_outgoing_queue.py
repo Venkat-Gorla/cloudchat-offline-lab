@@ -6,6 +6,7 @@ from outgoing_queue import (
     initialize_db,
     enqueue_message,
     get_pending_messages,
+    mark_in_flight,
 )
 
 
@@ -32,3 +33,15 @@ def test_get_pending_messages(tmp_path):
     assert messages[0]["recipient"] == "bob"
     assert messages[1]["recipient"] == "dave"
     assert all(message["status"] == "pending" for message in messages)
+
+
+def test_mark_in_flight(tmp_path):
+    db_path = tmp_path / "test.db"
+    initialize_db(db_path)
+
+    result = enqueue_message(db_path, "alice", "bob", "Hello Bob")
+    claimed = mark_in_flight(db_path, result["id"])
+
+    assert claimed is True
+    messages = get_pending_messages(db_path)
+    assert messages == []
