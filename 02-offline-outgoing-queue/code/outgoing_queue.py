@@ -72,3 +72,17 @@ def mark_in_flight(db_path: Path, message_id: int):
         )
 
     return cursor.rowcount == 1
+
+
+def mark_delivery_failed(db_path: Path, message_id: int):
+    with connect_db(db_path) as db:
+        cursor = db.execute(
+            """
+            UPDATE outgoing_messages
+            SET status = 'pending'
+            WHERE id = ? AND status = 'in_flight'
+            """,
+            (message_id,),
+        )
+
+    return cursor.rowcount == 1
