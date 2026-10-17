@@ -38,3 +38,17 @@ def enqueue_message(db_path: Path, recipient: str, body: str):
         message_id = cursor.lastrowid
 
     return {"id": message_id, "status": "pending"}
+
+
+def get_pending_messages(db_path: Path):
+    with connect_db(db_path) as db:
+        rows = db.execute(
+            """
+            SELECT id, recipient, body, status, attempt_count
+            FROM outgoing_messages
+            WHERE status = 'pending'
+            ORDER BY id
+            """
+        ).fetchall()
+
+    return [dict(row) for row in rows]
