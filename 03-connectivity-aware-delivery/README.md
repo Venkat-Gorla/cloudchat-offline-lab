@@ -25,10 +25,11 @@ New Message  Reconnect  App Startup
            Success        Failure
               │             │
               ▼             ▼
-          Delivered    Schedule Retry
-                            │
-                            ▼
-                   Remain Eligible for Delivery
+          Delivered      Schedule Retry
+              │             │
+              ▼             ▼
+        Remain in Queue  Remain in Queue
+        (Delivered)      (Pending / Retry Due)
 ```
 
-> Messages are always persisted locally first.
+> Messages are always persisted locally first. Message status and retry timing determine which messages are eligible for subsequent delivery attempts.
