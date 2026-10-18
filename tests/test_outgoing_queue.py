@@ -1,9 +1,9 @@
 """
-uv run pytest code -v
+uv run pytest -v
 """
 
 from datetime import datetime, timedelta, timezone
-from outgoing_queue import (
+from cloudchat_core.outgoing_queue import (
     connect_db,
     initialize_db,
     enqueue_message,
