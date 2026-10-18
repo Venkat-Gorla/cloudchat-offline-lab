@@ -47,6 +47,21 @@ def enqueue_message(
     return {"id": message_id, "status": "pending"}
 
 
+def get_message(db_path: Path, message_id: int):
+    with connect_db(db_path) as db:
+        row = db.execute(
+            """
+            SELECT id, sender, recipient, body, status,
+                   attempt_count, next_attempt_at
+            FROM outgoing_messages
+            WHERE id = ?
+            """,
+            (message_id,),
+        ).fetchone()
+
+    return dict(row) if row else None
+
+
 def get_pending_messages(db_path: Path):
     now = datetime.now(timezone.utc).isoformat()
 
@@ -108,18 +123,3 @@ def mark_delivery_failed(
         )
 
     return cursor.rowcount == 1
-
-
-def get_message(db_path: Path, message_id: int):
-    with connect_db(db_path) as db:
-        row = db.execute(
-            """
-            SELECT id, sender, recipient, body, status,
-                   attempt_count, next_attempt_at
-            FROM outgoing_messages
-            WHERE id = ?
-            """,
-            (message_id,),
-        ).fetchone()
-
-    return dict(row) if row else None
