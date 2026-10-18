@@ -1,5 +1,6 @@
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 
 DB_PATH = Path("outgoing.db")
@@ -14,18 +15,19 @@ def connect_db(db_path: Path = DB_PATH):
 def initialize_db(db_path: Path = DB_PATH):
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with connect_db(db_path) as db:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS outgoing_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sender TEXT NOT NULL,
-                recipient TEXT NOT NULL,
-                body TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                attempt_count INTEGER NOT NULL DEFAULT 0,
-                next_attempt_at TEXT
-            )
-        """)
+    with closing(connect_db(db_path)) as db:
+        with db:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS outgoing_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender TEXT NOT NULL,
+                    recipient TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    attempt_count INTEGER NOT NULL DEFAULT 0,
+                    next_attempt_at TEXT
+                )
+            """)
 
 
 def enqueue_message(
@@ -34,21 +36,22 @@ def enqueue_message(
     recipient: str,
     body: str,
 ):
-    with connect_db(db_path) as db:
-        cursor = db.execute(
-            """
-            INSERT INTO outgoing_messages (sender, recipient, body)
-            VALUES (?, ?, ?)
-            """,
-            (sender, recipient, body),
-        )
-        message_id = cursor.lastrowid
+    with closing(connect_db(db_path)) as db:
+        with db:
+            cursor = db.execute(
+                """
+                INSERT INTO outgoing_messages (sender, recipient, body)
+                VALUES (?, ?, ?)
+                """,
+                (sender, recipient, body),
+            )
+            message_id = cursor.lastrowid
 
     return {"id": message_id, "status": "pending"}
 
 
 def get_message(db_path: Path, message_id: int):
-    with connect_db(db_path) as db:
+    with closing(connect_db(db_path)) as db:
         row = db.execute(
             """
             SELECT id, sender, recipient, body, status,
@@ -65,7 +68,7 @@ def get_message(db_path: Path, message_id: int):
 def get_pending_messages(db_path: Path):
     now = datetime.now(timezone.utc).isoformat()
 
-    with connect_db(db_path) as db:
+    with closing(connect_db(db_path)) as db:
         rows = db.execute(
             """
             SELECT id, sender, recipient, body, status,
@@ -85,18 +88,20 @@ def get_pending_messages(db_path: Path):
 
 
 def mark_in_flight(db_path: Path, message_id: int):
-    with connect_db(db_path) as db:
-        cursor = db.execute(
-            """
-            UPDATE outgoing_messages
-            SET status = 'in_flight',
-                attempt_count = attempt_count + 1
-            WHERE id = ? AND status = 'pending'
-            """,
-            (message_id,),
-        )
+    with closing(connect_db(db_path)) as db:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE outgoing_messages
+                SET status = 'in_flight',
+                    attempt_count = attempt_count + 1
+                WHERE id = ? AND status = 'pending'
+                """,
+                (message_id,),
+            )
+            updated = cursor.rowcount == 1
 
-    return cursor.rowcount == 1
+    return updated
 
 
 def mark_delivery_failed(
@@ -111,30 +116,34 @@ def mark_delivery_failed(
         datetime.now(timezone.utc) + timedelta(seconds=retry_delay_seconds)
     ).isoformat()
 
-    with connect_db(db_path) as db:
-        cursor = db.execute(
-            """
-            UPDATE outgoing_messages
-            SET status = 'pending',
-                next_attempt_at = ?
-            WHERE id = ? AND status = 'in_flight'
-            """,
-            (next_attempt_at, message_id),
-        )
+    with closing(connect_db(db_path)) as db:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE outgoing_messages
+                SET status = 'pending',
+                    next_attempt_at = ?
+                WHERE id = ? AND status = 'in_flight'
+                """,
+                (next_attempt_at, message_id),
+            )
+            updated = cursor.rowcount == 1
 
-    return cursor.rowcount == 1
+    return updated
 
 
 def mark_delivered(db_path: Path, message_id: int):
-    with connect_db(db_path) as db:
-        cursor = db.execute(
-            """
-            UPDATE outgoing_messages
-            SET status = 'delivered',
-                next_attempt_at = NULL
-            WHERE id = ? AND status = 'in_flight'
-            """,
-            (message_id,),
-        )
+    with closing(connect_db(db_path)) as db:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE outgoing_messages
+                SET status = 'delivered',
+                    next_attempt_at = NULL
+                WHERE id = ? AND status = 'in_flight'
+                """,
+                (message_id,),
+            )
+            updated = cursor.rowcount == 1
 
-    return cursor.rowcount == 1
+    return updated
