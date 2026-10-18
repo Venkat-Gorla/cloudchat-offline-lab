@@ -1,31 +1,28 @@
 # Lab 02 — Offline Outgoing Queue
 
 ```text
-Alice CLI
-    │
-    ▼
-Compose Message
-    │
-    ▼
-SQLite Outgoing Queue
-    │
-    ▼
-Network Available?
-    │
-    ├── No ──► Keep Pending
-    │              │
-    │           Reconnect
-    │              │
-    └── Yes ◄──────┘
-           │
-           ▼
-      HTTP Server
-           │
-           ▼
-   Persisted Message
-           │
-           ▼
-   Mark Queue Item Sent
+    Enqueue Message
+          │
+          ▼
+  SQLite Outgoing Queue
+          │
+          ▼
+       Pending
+          │
+          ▼
+      In Flight
+          │
+     ┌────┴────┐
+     ▼         ▼
+  Failure    Success
+     │         │
+     ▼         ▼
+  Pending   Delivered
+     │
+     ▼
+ Retry When Due
+     │
+     └────────────► In Flight
 ```
 
-> Offline messaging prototype — persist outgoing messages locally until the server accepts them.
+> Reusable SQLite queue for persistent outgoing messages, delivery state tracking, and retry scheduling.
