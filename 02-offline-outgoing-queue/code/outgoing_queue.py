@@ -123,3 +123,18 @@ def mark_delivery_failed(
         )
 
     return cursor.rowcount == 1
+
+
+def mark_delivered(db_path: Path, message_id: int):
+    with connect_db(db_path) as db:
+        cursor = db.execute(
+            """
+            UPDATE outgoing_messages
+            SET status = 'delivered',
+                next_attempt_at = NULL
+            WHERE id = ? AND status = 'in_flight'
+            """,
+            (message_id,),
+        )
+
+    return cursor.rowcount == 1

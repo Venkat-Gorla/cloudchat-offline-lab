@@ -11,6 +11,7 @@ from outgoing_queue import (
     get_pending_messages,
     mark_in_flight,
     mark_delivery_failed,
+    mark_delivered,
 )
 
 
@@ -133,3 +134,20 @@ def test_failed_message_is_ready_after_retry_time(tmp_path):
     assert len(messages) == 1
     assert messages[0]["id"] == message_id
     assert messages[0]["attempt_count"] == 1
+
+
+def test_mark_delivered(tmp_path):
+    db_path = tmp_path / "test.db"
+    initialize_db(db_path)
+
+    result = enqueue_message(db_path, "alice", "bob", "Hello Bob")
+    message_id = result["id"]
+
+    assert mark_in_flight(db_path, message_id) is True
+    assert mark_delivered(db_path, message_id) is True
+
+    message = get_message(db_path, message_id)
+
+    assert message["status"] == "delivered"
+    assert message["attempt_count"] == 1
+    assert get_pending_messages(db_path) == []
