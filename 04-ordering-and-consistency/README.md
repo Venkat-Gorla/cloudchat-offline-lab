@@ -31,7 +31,7 @@
 ## 2. Duplicate Suppression
 
 ```text
-     Submit Message
+      Submit Message
        ID: msg-123
             │
             ▼
@@ -46,8 +46,6 @@
     Message    Result
 ```
 
-> A stable client-generated message ID and a database uniqueness constraint prevent the same logical message from being inserted into the local queue more than once.
->
 > Local duplicate suppression does not guarantee exactly-once delivery to a remote recipient.
 
 ## 3. Concurrent Workers
@@ -61,7 +59,7 @@
         │           │
         └─────┬─────┘
               ▼
-       Atomic Claim
+         Atomic Claim
               │
         ┌─────┴─────┐
         ▼           ▼
