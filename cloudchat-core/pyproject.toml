@@ -1,7 +1,7 @@
 [project]
 name = "cloudchat-core"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reusable components for offline messaging experiments"
 
 authors = [
     { name = "Venkat Gorla" }
