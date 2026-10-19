@@ -67,49 +67,48 @@ def insert_conversations(
         )
 
 
-def inject_test_data():
-    print("Starting SQLite test data injection...")
-
+def inject_test_data(db):
     base_time = datetime.now(timezone.utc) - timedelta(
         days=len(TEST_CONVERSATIONS)
     )
 
-    with sqlite3.connect(DB_PATH) as db:
-        db.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    for index, (u1, u2) in enumerate(TEST_CONVERSATIONS):
+        conversation_id = f"CONV#{u1}#{u2}"
+        participants = [u1, u2]
 
-        for index, (u1, u2) in enumerate(TEST_CONVERSATIONS):
-            conversation_id = f"CONV#{u1}#{u2}"
-            participants = [u1, u2]
+        # Each conversation separated by one day.
+        conversation_time = base_time + timedelta(days=index)
 
-            # Each conversation separated by one day.
-            conversation_time = base_time + timedelta(days=index)
+        messages = [
+            (u1, f"Message 1 from {u1} to {u2}"),
+            (u2, f"Reply 1 from {u2} to {u1}"),
+            (u1, f"Message 2 from {u1} to {u2}"),
+        ]
 
-            messages = [
-                (u1, f"Message 1 from {u1} to {u2}"),
-                (u2, f"Reply 1 from {u2} to {u1}"),
-                (u1, f"Message 2 from {u1} to {u2}"),
-            ]
+        insert_messages(db, messages, conversation_id, conversation_time)
 
-            insert_messages(db, messages, conversation_id, conversation_time)
+        last_message = messages[-1][1]
+        last_timestamp = int(
+            (
+                conversation_time +
+                timedelta(minutes=10 * (len(messages) - 1))
+            ).timestamp() * 1000
+        )
 
-            last_message = messages[-1][1]
-            last_timestamp = int(
-                (
-                    conversation_time +
-                    timedelta(minutes=10 * (len(messages) - 1))
-                ).timestamp() * 1000
-            )
-
-            insert_conversations(
-                db,
-                participants,
-                conversation_id,
-                last_message,
-                last_timestamp
-            )
-
-    print(f"Test data successfully written to {DB_PATH}")
+        insert_conversations(
+            db,
+            participants,
+            conversation_id,
+            last_message,
+            last_timestamp
+        )
 
 
 if __name__ == "__main__":
-    inject_test_data()
+    print("Starting SQLite test data injection...")
+
+    with sqlite3.connect(DB_PATH) as db:
+        db.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        inject_test_data(db)
+
+    print(f"Test data successfully written to {DB_PATH}")
