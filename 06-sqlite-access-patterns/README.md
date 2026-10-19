@@ -1,7 +1,7 @@
 # Lab 06 — SQLite Access Patterns
 
 ```text
-                  SQLite Message Store
+                   SQLite Message Store
                            │
               ┌────────────┼────────────────┐
               ▼            ▼                ▼
