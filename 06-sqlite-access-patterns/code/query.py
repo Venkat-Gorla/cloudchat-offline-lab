@@ -4,9 +4,10 @@ uv run code/query.py alice
 """
 
 from pathlib import Path
-from contextlib import closing
-import sqlite3
+from datetime import datetime, timezone
 import argparse
+import sqlite3
+from contextlib import closing
 
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / "cloudchat.db"
@@ -36,6 +37,14 @@ def get_messages(db, conversation_id):
     ).fetchall()
 
 
+def format_timestamp(timestamp_ms):
+    timestamp = datetime.fromtimestamp(
+        timestamp_ms / 1000,
+        tz=timezone.utc,
+    )
+    return timestamp.strftime("%Y-%m-%d %H:%M UTC")
+
+
 def print_conversations(db, user_id):
     conversations = get_conversations(db, user_id)
 
@@ -46,12 +55,12 @@ def print_conversations(db, user_id):
     for conversation_id, last_message, last_activity_at in conversations:
         print(f"\n{conversation_id}")
         print(f"  Last message: {last_message}")
-        print(f"  Last activity: {last_activity_at}")
+        print(f"  Last activity: {format_timestamp(last_activity_at)}")
 
         for message_id, sender_id, body, created_at in get_messages(
             db, conversation_id
         ):
-            print(f"  [{message_id}] {sender_id}: {body}")
+            print(f"  [{format_timestamp(created_at)}] {sender_id}: {body}")
 
 
 def parse_args():

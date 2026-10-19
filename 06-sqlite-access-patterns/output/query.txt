@@ -1,0 +1,15 @@
+> uv run code/query.py alice
+
+CONV#alice#carol
+  Last message: Message 2 from alice to carol
+  Last activity: 2026-10-18 10:14 UTC
+  [2026-10-18 09:54 UTC] alice: Message 1 from alice to carol
+  [2026-10-18 10:04 UTC] carol: Reply 1 from carol to alice
+  [2026-10-18 10:14 UTC] alice: Message 2 from alice to carol
+
+CONV#alice#bob
+  Last message: Message 2 from alice to bob
+  Last activity: 2026-10-17 10:14 UTC
+  [2026-10-17 09:54 UTC] alice: Message 1 from alice to bob
+  [2026-10-17 10:04 UTC] bob: Reply 1 from bob to alice
+  [2026-10-17 10:14 UTC] alice: Message 2 from alice to bob
