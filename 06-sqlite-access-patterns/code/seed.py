@@ -1,3 +1,6 @@
+"""
+uv run code/seed.py
+"""
 
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
@@ -12,6 +15,56 @@ TEST_CONVERSATIONS = [
     ("alice", "bob"),
     ("alice", "carol"),
 ]
+
+
+def insert_messages(db, messages, conversation_id, conversation_time):
+    for msg_index, (sender, body) in enumerate(messages):
+        message_time = conversation_time + timedelta(minutes=10 * msg_index)
+        timestamp_ms = int(message_time.timestamp() * 1000)
+        message_id = f"MSG#{ulid.from_timestamp(timestamp_ms / 1000)}"
+
+        db.execute(
+            """
+            INSERT INTO messages (
+                message_id, conversation_id, created_at,
+                sender_id, body, delivery_status
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                message_id,
+                conversation_id,
+                timestamp_ms,
+                sender,
+                body,
+                "delivered",
+            ),
+        )
+
+
+def insert_conversations(
+    db,
+    participants,
+    conversation_id,
+    last_message,
+    last_timestamp
+) -> None:
+    for user_id in participants:
+        db.execute(
+            """
+            INSERT INTO conversation_inbox (
+                user_id, conversation_id,
+                last_message, last_activity_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                conversation_id,
+                last_message,
+                last_timestamp,
+            ),
+        )
 
 
 def inject_test_data():
@@ -37,56 +90,23 @@ def inject_test_data():
                 (u1, f"Message 2 from {u1} to {u2}"),
             ]
 
-            for msg_index, (sender, body) in enumerate(messages):
-                message_time = conversation_time + timedelta(
-                    minutes=10 * msg_index
-                )
-                timestamp_ms = int(message_time.timestamp() * 1000)
-                message_id = f"MSG#{ulid.from_timestamp(timestamp_ms / 1000)}"
-
-                db.execute(
-                    """
-                    INSERT INTO messages (
-                        message_id, conversation_id, created_at,
-                        sender_id, body, delivery_status
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        message_id,
-                        conversation_id,
-                        timestamp_ms,
-                        sender,
-                        body,
-                        "delivered",
-                    ),
-                )
+            insert_messages(db, messages, conversation_id, conversation_time)
 
             last_message = messages[-1][1]
             last_timestamp = int(
                 (
                     conversation_time +
                     timedelta(minutes=10 * (len(messages) - 1))
-                ).timestamp()
-                * 1000
+                ).timestamp() * 1000
             )
 
-            for user_id in participants:
-                db.execute(
-                    """
-                    INSERT INTO conversation_inbox (
-                        user_id, conversation_id,
-                        last_message, last_activity_at
-                    )
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        user_id,
-                        conversation_id,
-                        last_message,
-                        last_timestamp,
-                    ),
-                )
+            insert_conversations(
+                db,
+                participants,
+                conversation_id,
+                last_message,
+                last_timestamp
+            )
 
     print(f"Test data successfully written to {DB_PATH}")
 
