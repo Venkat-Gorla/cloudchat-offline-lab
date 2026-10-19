@@ -9,7 +9,7 @@
         Conversations     Messages       Delivery Status
               │            │                │
               ▼            ▼                ▼
-         user_id       conversation_id    message_id
+           user_id      conversation_id    message_id
               │            │
               ▼            ▼
         Order by Last   Order by ULID
