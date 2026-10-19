@@ -1,0 +1,7 @@
+> uv run code/explain.py
+
+List conversations by recency
+  SEARCH conversation_inbox USING INDEX idx_inbox_recency (user_id=?)
+
+Get conversation messages
+  SEARCH messages USING INDEX idx_messages_conversation (conversation_id=?)
